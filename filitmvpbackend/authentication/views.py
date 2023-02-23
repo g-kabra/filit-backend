@@ -1,11 +1,16 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import generics, viewsets
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import get_user_model
 import base64, pyotp
 from datetime import datetime
 from random import randint
 
 from .models import phoneModel, emailModel
+from .serializers import customUserSerializer
 
 
 # Create your views here.
@@ -69,3 +74,10 @@ def email_verification(request, email, *args, **kwargs):
         if OTP.verify(request.data.get("otp"), email.counter):
             return Response("Verified", status=200)
         return Response("Wrong OTP", status=400)
+
+class UserViewSet(viewsets.ModelViewSet):
+    User = get_user_model()
+    queryset = User.objects.all()
+    serializer_class = customUserSerializer
+    authentication_classes = (TokenAuthentication,)
+    # permission_classes = (IsAuthenticated, IsAdminUser)

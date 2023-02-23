@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, AbstractUser
+from rest_framework.authtoken.models import Token
 
 from .managers import CustomUserManager
 
@@ -26,6 +27,9 @@ class customUser(AbstractBaseUser):
     mobile = models.IntegerField(unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+    is_admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    dob = models.DateField(default="2000-01-01")
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'mobile'
