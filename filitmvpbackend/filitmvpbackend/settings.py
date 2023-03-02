@@ -23,10 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "111b7%#wf2ff83h7jltp7!ed_46hosar9(x#d0fo@jinc#9s##"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+DEBUG = True
 
 ALLOWED_HOSTS = [
-    "filitmvp.azurewebsites.net/",
+    "filitmvp.azurewebsites.net",
+    "0.0.0.0"
 ]
 
 
