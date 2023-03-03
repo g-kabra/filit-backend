@@ -27,7 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "filitmvp.azurewebsites.net",
-    "0.0.0.0"
+    "0.0.0.0",
+    "127.0.0.1"
 ]
 
 
