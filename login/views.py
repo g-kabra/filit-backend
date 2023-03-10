@@ -103,6 +103,8 @@ class UserViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AllowAny, )
     def get_queryset(self):
-        if self.request.user.is_admin:
-            return self.queryset
-        return self.queryset.filter(mobile=self.request.user.mobile)
+        if self.request.user.is_authenticated:
+            if self.request.user.is_admin:
+                return self.queryset
+            return self.queryset.filter(mobile=self.request.user.mobile)
+        return None
