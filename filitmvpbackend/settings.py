@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     # User Defined Apps
-    "authentication",
+    "login"
 ]
 
 MIDDLEWARE = [
@@ -79,6 +79,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "filitmvpbackend.wsgi.application"
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -108,7 +117,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = "authentication.customUser"
+AUTH_USER_MODEL = "login.customUser"
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
