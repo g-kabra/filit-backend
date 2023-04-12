@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     # User Defined Apps
-    "login"
+    "login",
+    "eKYC",
+    "blog"
 ]
 
 MIDDLEWARE = [

@@ -19,6 +19,7 @@ class CustomUserManager(BaseUserManager):
             mobile = mobile,
             is_admin = True, 
             is_staff = True,
+            is_superuser = True,
             **kwargs
         )
         user.set_password(password)
