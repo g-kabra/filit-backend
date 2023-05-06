@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "111b7%#wf2ff83h7jltp7!ed_46hosar9(x#d0fo@jinc#9s##"
+SECRET_KEY=os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -46,8 +50,8 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     # User Defined Apps
     "login",
-    "eKYC",
-    "blog"
+    "blog",
+    "gold"
 ]
 
 MIDDLEWARE = [

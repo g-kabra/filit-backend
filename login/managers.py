@@ -1,4 +1,5 @@
 from django.contrib.auth.models import BaseUserManager
+from shortuuid import ShortUUID
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, mobile, password=None, **kwargs):

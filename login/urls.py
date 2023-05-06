@@ -8,6 +8,8 @@ from . import views
 urlpatterns = [
     path("phoneVerify/<phone>/", views.phone_verification),
     path("emailVerify/<email>/", views.email_verification),
+    path("pincode/<pincode>/", views.pincode_add),
+    path("updateuser/", views.add_data)
 ]
 
 router = routers.SimpleRouter()

@@ -11,12 +11,14 @@ from rest_framework import viewsets
 
 from datetime import datetime
 from random import randint
-import base64, pyotp
+import base64
+import pyotp
 
 from .models import phoneModel, emailModel
 from .serializers import CustomUserSerializer
 
 # Create your views here.
+
 
 class generateKey:
     @staticmethod
@@ -41,9 +43,9 @@ def phone_verification(request, phone, *args, **kwargs):
         # ? Random key generated
         key = base64.b32encode(keygen.returnValue(phone).encode())
         OTP = pyotp.HOTP(key)
-        #API CALL SMS API
-        return Response({"OTP": OTP.at(mobile.counter)}, status=200)
-    if request.method == "POST":
+        # API CALL SMS API
+        return Response({"otp": OTP.at(mobile.counter)}, status=200)
+    elif request.method == "POST":
         try:
             mobile = phoneModel.objects.get(mobile=phone)
         except ObjectDoesNotExist:
@@ -53,15 +55,15 @@ def phone_verification(request, phone, *args, **kwargs):
         OTP = pyotp.HOTP(key)
         if OTP.verify(request.data.get("otp"), mobile.counter):
             User = get_user_model()
-            if User.objects.all().filter(mobile=mobile):
+            if User.objects.all().filter(mobile=phone):
                 user = User.objects.get(mobile=phone)
-                token, created = Token.objects.get_or_create(user = user)
-                return Response({'token':token.key}, status=200)
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key}, status=200)
             else:
                 # If first time, create user and return new user token
                 user = User.objects.create(mobile=phone)
-                token, created = Token.objects.get_or_create(user = user)
-                return Response({'token':token.key}, status=200)
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key}, status=200)
         return Response("Wrong OTP", status=400)
 
 
@@ -88,22 +90,49 @@ def email_verification(request, email, *args, **kwargs):
         key = base64.b32encode(keygen.returnValue(email).encode())
         OTP = pyotp.HOTP(key)
         if OTP.verify(request.data.get("otp"), email.counter):
-            pass
-            #Update User
-            User = get_user_model()
+            # pass
+            # Update User
             user = request.user
             user.authentication_stage = 'email-verified'
             user.email = email.email
             user.save()
             return Response("Verified", status=200)
         return Response("Wrong OTP", status=400)
-    
+
+
+@api_view(["POST"])
+def pincode_add(request, pincode, *args, **kwargs):
+    user = request.user
+    user.pincode = pincode
+    user.save()
+    return Response("Pincode added", status=200)
+
+
+@api_view(["POST"])
+def add_data(request, *args, **kwargs):
+    user = request.user
+    details = request.data
+    if (details.get('first_name') != None):
+        user.first_name = details.get('first_name')
+    if (details.get('last_name') != None):
+        user.last_name = details.get('last_name')
+    if (details.get('dob') != None):
+        user.dob = details.get('dob')
+    if (details.get('gender') != None):
+        user.gender = details.get('gender')
+    if (details.get('pan_number') != None):
+        user.pan_number = details.get('pan_number')
+    user.save()
+    return Response("Updated fields successfully")
+
+
 class UserViewSet(viewsets.ModelViewSet):
     User = get_user_model()
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AllowAny, )
+
     def get_queryset(self):
         if self.request.user.is_authenticated:
             if self.request.user.is_admin:
