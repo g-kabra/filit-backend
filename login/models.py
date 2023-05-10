@@ -45,6 +45,7 @@ class customUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
+
     USERNAME_FIELD = 'mobile'
 
     def __str__(self):

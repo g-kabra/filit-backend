@@ -40,3 +40,7 @@ def make_request(relative_url, body={}, headers={}, method="POST"):
         return requests.get(BASE_URL + relative_url, headers=headers)
     elif method == "POST":
         return requests.post(BASE_URL + relative_url, headers=headers, json=body)
+    elif method == "PUT":
+        return requests.put(BASE_URL + relative_url, headers=headers, json=body)
+    elif method == "DELETE":
+        return requests.delete(BASE_URL + relative_url, headers=headers)

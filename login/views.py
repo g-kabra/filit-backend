@@ -101,29 +101,14 @@ def email_verification(request, email, *args, **kwargs):
 
 
 @api_view(["POST"])
-def pincode_add(request, pincode, *args, **kwargs):
-    user = request.user
-    user.pincode = pincode
-    user.save()
-    return Response("Pincode added", status=200)
-
-
-@api_view(["POST"])
 def add_data(request, *args, **kwargs):
     user = request.user
     details = request.data
-    if (details.get('first_name') != None):
-        user.first_name = details.get('first_name')
-    if (details.get('last_name') != None):
-        user.last_name = details.get('last_name')
-    if (details.get('dob') != None):
-        user.dob = details.get('dob')
-    if (details.get('gender') != None):
-        user.gender = details.get('gender')
-    if (details.get('pan_number') != None):
-        user.pan_number = details.get('pan_number')
-    user.save()
-    return Response("Updated fields successfully")
+    serialized = CustomUserSerializer(user, details, partial=True)
+    if serialized.is_valid():
+        serialized.save()
+        return Response(serialized.data)
+    return Response(serialized.errors, status=400)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -132,7 +117,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = CustomUserSerializer
     authentication_classes = (TokenAuthentication, )
     permission_classes = (AllowAny, )
-
     def get_queryset(self):
         if self.request.user.is_authenticated:
             if self.request.user.is_admin:
