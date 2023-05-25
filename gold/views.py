@@ -84,6 +84,7 @@ def register_bank(request, *args, **kwargs):
                             gold_user.gold_user_id+"/banks", body=payload)
     if(response.status_code >= 400):
         return Response(response.json())
+    response = response.json()
     GoldBankModel.objects.create(
         gold_user_id=gold_user,
         bank_id=response["result"]["data"]["userBankId"],
@@ -91,7 +92,7 @@ def register_bank(request, *args, **kwargs):
         account_name=response["result"]["data"]["accountName"],
         ifsc_code=response["result"]["data"]["ifscCode"]
     )
-    return Response(response.json())
+    return Response(response)
 
 
 @api_view(["GET"])
@@ -281,5 +282,12 @@ class TransactionViewSet(viewsets.ModelViewSet):
 # ? Withdraw Status
 
 # ? Passbook
+
+@api_view(["GET"])
+def get_passbook(request, *args, **kwargs):
+    user = request.user
+    gold_user = GoldInvestorModel.objects.get(user_id = user)
+    response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/passbook", method="GET")
+    return Response(response.json())
 
 # ? Invoices

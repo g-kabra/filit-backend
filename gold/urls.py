@@ -15,6 +15,7 @@ urlpatterns = [
     path("buy/", views.buy),
     path("sell/", views.sell),
     path("start-autopay/", views.start_autopay),
+    path("get-passbook/", views.get_passbook),
 ]
 
 router = routers.SimpleRouter()
