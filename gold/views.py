@@ -25,7 +25,7 @@ def register_user(request, *args, **kwargs):
     user = request.user
     if (not user.pincode or not user.first_name):
         return Response("Insufficient information", status=400)
-    if(GoldInvestorModel.objects.get(user_id=user)):
+    if(GoldInvestorModel.objects.filter(user_id=user)):
         return Response("Already registered", status=400)
     mobileNumber = user.mobile
     userName = user.first_name + " " + user.last_name
