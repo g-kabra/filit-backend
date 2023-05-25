@@ -13,6 +13,8 @@ BASE_HEADERS = {
 
 def get_token():
     curr_time = datetime.now(pytz.utc)
+    timezone = pytz.timezone('Asia/Kolkata')
+    curr_time = timezone.localize(curr_time)
     token_model = GoldTokenModel.objects.first()
     if(not token_model):
         token_model = GoldTokenModel.objects.create()
