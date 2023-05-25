@@ -25,6 +25,8 @@ def register_user(request, *args, **kwargs):
     user = request.user
     if (not user.pincode or not user.first_name):
         return Response("Insufficient information", status=400)
+    if(GoldInvestorModel.objects.get(user_id=user)):
+        return Response("Already registered", status=400)
     mobileNumber = user.mobile
     userName = user.first_name + " " + user.last_name
     new_user = GoldInvestorModel.objects.create(user_id=user)
@@ -80,6 +82,8 @@ def register_bank(request, *args, **kwargs):
     }
     response = make_request("/merchant/v1/users/" +
                             gold_user.gold_user_id+"/banks", body=payload)
+    if(response.status_code >= 400):
+        return Response(response.json())
     GoldBankModel.objects.create(
         gold_user_id=gold_user,
         bank_id=response["result"]["data"]["userBankId"],
@@ -170,9 +174,6 @@ def get_rates_view(request, *args, **kwargs):
         "gBuyGst": rates.gold_buy_gst,
         "sBuyGst": rates.silver_buy_gst
     })
-
-# * Place Buy Order
-
 
 @api_view(["POST"])
 def buy(request, *args, **kwargs):
