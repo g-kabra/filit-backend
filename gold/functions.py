@@ -12,7 +12,7 @@ BASE_HEADERS = {
 
 
 def get_token():
-    curr_time = datetime.now(pytz.utc)
+    curr_time = datetime.now()
     timezone = pytz.timezone('Asia/Kolkata')
     curr_time = timezone.localize(curr_time)
     token_model = GoldTokenModel.objects.first()
@@ -26,8 +26,10 @@ def get_token():
                                      "password": os.getenv("AUGMONT_PASS")
                                  })
         response = response.json()
-        token_model.expiry = datetime.strptime(
+        expiry_time = datetime.strptime(
             response["result"]["data"]["expiresAt"], "%Y-%m-%d %H:%M:%S")
+        expiry_time = timezone.localize(expiry_time)
+        token_model.expiry = expiry_time
         token_model.token = response["result"]["data"]["accessToken"]
         token_model.token_type = response["result"]["data"]["tokenType"]
         token_model.save()
