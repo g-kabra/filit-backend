@@ -77,6 +77,7 @@ class GoldTransactionModel(models.Model):
     amount = models.FloatField()
     # * Change to choice based
     status = models.BooleanField(default=False)
+    is_autopay = models.BooleanField(default=False)
     bank_id = models.ForeignKey(
         GoldBankModel, to_field="bank_id", null=True, on_delete=models.SET_NULL)
 
