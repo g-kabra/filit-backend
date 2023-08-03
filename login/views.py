@@ -58,12 +58,12 @@ def phone_verification(request, phone, *args, **kwargs):
             if User.objects.all().filter(mobile=phone):
                 user = User.objects.get(mobile=phone)
                 token, created = Token.objects.get_or_create(user=user)
-                return Response({'token': token.key}, status=200)
+                return Response({'token': token.key, 'authentication_stage': user.authentication_stage}, status=200)
             else:
                 # If first time, create user and return new user token
                 user = User.objects.create(mobile=phone)
                 token, created = Token.objects.get_or_create(user=user)
-                return Response({'token': token.key}, status=200)
+                return Response({'token': token.key, 'authentication_stage': user.authentication_stage}, status=200)
         return Response("Wrong OTP", status=400)
 
 
@@ -106,6 +106,7 @@ def add_data(request, *args, **kwargs):
     details = request.data
     serialized = CustomUserSerializer(user, details, partial=True)
     if serialized.is_valid():
+        user.authentication_stage = 'profile-verified'
         serialized.save()
         return Response(serialized.data)
     return Response(serialized.errors, status=400)

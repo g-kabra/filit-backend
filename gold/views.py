@@ -183,6 +183,7 @@ def buy(request, *args, **kwargs):
     rates = get_rates()
     metalType = request.data.get("metal_type")
     amount = request.data.get("amount")
+    is_autopay = request.data.get("is_autopay")
     lockPrice = rates.gold_buy
     if (metalType == "silver"):
         lockPrice = rates.silver_buy
@@ -192,7 +193,8 @@ def buy(request, *args, **kwargs):
         block_id=rates.block_id,
         lock_price=lockPrice,
         metal_type=metalType,
-        amount=amount
+        amount=amount,
+        is_autopay=is_autopay
     )
     payload = {
         "lockPrice": lockPrice,
