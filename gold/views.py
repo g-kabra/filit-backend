@@ -25,8 +25,8 @@ def register_user(request, *args, **kwargs):
     user = request.user
     if (not user.pincode or not user.first_name):
         return Response("Insufficient information", status=400)
-    if(GoldInvestorModel.objects.filter(user_id=user)):
-        return Response("Already registered", status=400)
+    if (GoldInvestorModel.objects.filter(user_id=user)):
+        return Response({"message": "Already registered"}, status=400)
     mobileNumber = user.mobile
     userName = user.first_name + " " + user.last_name
     new_user = GoldInvestorModel.objects.create(user_id=user)
@@ -42,20 +42,28 @@ def register_user(request, *args, **kwargs):
     }
     response = make_request("/merchant/v1/users",
                             body=payload, headers=headers)
+    if (response.status_code >= 300):
+        new_user.delete()
     return Response(response.json())
 
 
 @api_view(["GET"])
 def get_user(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     return Response(make_request("/merchant/v1/users/"+gold_user.gold_user_id, method="GET").json())
 
 
 @api_view(["POST"])
 def set_nominee(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     response = make_request("/merchant/v1/users/"+gold_user.gold_user_id, body={
         "nomineeName": request.data.get("nominee_name"),
         "nomineeRelation": request.data.get("nominee_relation"),
@@ -74,7 +82,10 @@ def set_nominee(request, *args, **kwargs):
 @api_view(["POST"])
 def register_bank(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     payload = {
         "accountNumber": request.data.get("account_number"),
         "accountName": request.data.get("account_name"),
@@ -82,7 +93,7 @@ def register_bank(request, *args, **kwargs):
     }
     response = make_request("/merchant/v1/users/" +
                             gold_user.gold_user_id+"/banks", body=payload)
-    if(response.status_code >= 400):
+    if (response.status_code >= 400):
         return Response(response.json())
     response = response.json()
     GoldBankModel.objects.create(
@@ -98,14 +109,20 @@ def register_bank(request, *args, **kwargs):
 @api_view(["GET"])
 def get_banks(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     return Response(make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks", method="GET").json())
 
 
 @api_view(["DELETE"])
 def delete_bank(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     bank_id = request.data.get("bank_id")
     GoldBankModel.objects.get(bank_id=bank_id).delete()
     return Response(make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, method="DELETE").json())
@@ -118,7 +135,10 @@ def delete_bank(request, *args, **kwargs):
 @api_view(["POST"])
 def register_address(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     payload = {
         "name": request.data.get("name"),
         "address": request.data.get("address"),
@@ -176,10 +196,14 @@ def get_rates_view(request, *args, **kwargs):
         "sBuyGst": rates.silver_buy_gst
     })
 
+
 @api_view(["POST"])
 def buy(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     rates = get_rates()
     metalType = request.data.get("metal_type")
     amount = request.data.get("amount")
@@ -214,7 +238,10 @@ def buy(request, *args, **kwargs):
 @api_view(["POST"])
 def sell(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     rates = get_rates()
     metalType = request.data.get("metal_type")
     amount = request.data.get("amount")
@@ -252,7 +279,10 @@ def sell(request, *args, **kwargs):
 @api_view(["POST"])
 def start_autopay(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
     GoldAutopayModel.objects.create(
         gold_user=gold_user,
         autopay_amount=request.data.get("autopay_amount"),
@@ -270,10 +300,12 @@ class TransactionViewSet(viewsets.ModelViewSet):
     queryset = txn.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = (AllowAny, )
+
     def get_gold_user(self):
         user = self.request.user
-        gold_user = GoldInvestorModel.objects.get(user_id = user.user_id)
+        gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
         return gold_user
+
     def get_queryset(self):
         if self.request.user.is_authenticated:
             if self.request.user.is_admin:
@@ -285,11 +317,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
 # ? Passbook
 
+
 @api_view(["GET"])
 def get_passbook(request, *args, **kwargs):
     user = request.user
-    gold_user = GoldInvestorModel.objects.get(user_id = user)
-    response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/passbook", method="GET")
+    gold_user = GoldInvestorModel.objects.get(user_id=user)
+    response = make_request("/merchant/v1/users/" +
+                            gold_user.gold_user_id+"/passbook", method="GET")
     return Response(response.json())
 
 # ? Invoices

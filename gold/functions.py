@@ -18,7 +18,7 @@ def get_token():
     token_model = GoldTokenModel.objects.first()
     if(not token_model):
         token_model = GoldTokenModel.objects.create()
-    if (token_model.expiry <= curr_time):
+    if (token_model.expiry < curr_time):
         print("Getting new token")
         response = requests.post(BASE_URL + "/merchant/v1/auth/login",
                                  data={
