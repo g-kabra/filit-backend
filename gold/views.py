@@ -13,7 +13,7 @@ from .models import GoldInvestorModel, GoldBankModel, GoldAddressModel, GoldRate
 
 from .functions import make_request
 
-from .serializers import TransactionSerializer
+from .serializers import TransactionSerializer, BankSerializer
 
 # Create your views here.
 
@@ -128,6 +128,28 @@ def delete_bank(request, *args, **kwargs):
     return Response(make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, method="DELETE").json())
 
 # ? Bank Updation
+@api_view(["POST"])
+def update_bank(request, *args, **kwargs):
+    user = request.user
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if (not gold_user):
+        return Response({"details": "User not found"}, status=400)
+    gold_user = gold_user.first()
+    bank_id = request.data.get("bank_id")
+    bank = GoldBankModel.objects.get(bank_id=bank_id)
+    bank = BankSerializer(bank, data=request.data, partial=True)
+    if (bank.is_valid()):
+        response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, body={
+            "accountNumber": bank.validated_data["account_number"],
+            "accountName": bank.validated_data["account_name"],
+            "ifscCode": bank.validated_data["ifsc_code"],
+        }, method="PUT")
+        if(response.status_code < 300):
+            bank.save()
+            return Response(response.json())
+        return Response(response.json(), status=400)
+    return Response(bank.errors, status=400)
+
 
 # * Address Registration
 

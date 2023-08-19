@@ -10,6 +10,7 @@ urlpatterns = [
     path("register-bank/", views.register_bank),
     path("get-bank/", views.get_banks),
     path("delete-bank/", views.delete_bank),
+    path("update-bank/", views.update_bank),
     path("register-address/", views.register_address),
     path("setnominee/", views.set_nominee),
     path("buy/", views.buy),

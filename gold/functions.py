@@ -33,6 +33,7 @@ def get_token():
         token_model.token = response["result"]["data"]["accessToken"]
         token_model.token_type = response["result"]["data"]["tokenType"]
         token_model.save()
+        print(expiry_time.isoformat())
     return token_model.token_type + " " + token_model.token
 
 
