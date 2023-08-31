@@ -1,4 +1,4 @@
-from .models import GoldTransactionModel, GoldBankModel
+from .models import GoldTransactionModel, GoldBankModel, GoldDailySavingsModel
 
 from rest_framework import serializers
 

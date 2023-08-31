@@ -49,9 +49,9 @@ INSTALLED_APPS = [
     # Third Party Apps
     "rest_framework",
     "rest_framework.authtoken",
+    "drf_yasg",
     # User Defined Apps
     "login",
-    "blog",
     "gold"
 ]
 
@@ -124,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = "login.customUser"
+AUTH_USER_MODEL = "login.CustomUser"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

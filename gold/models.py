@@ -1,17 +1,19 @@
-from django.db import models
-from login.models import customUser
+"""Schemas for the Gold app"""
 from datetime import datetime
+from django.db import models
 from shortuuid.django_fields import ShortUUIDField, ShortUUID
-import pytz
 
+from login.models import CustomUser
 # Create your models here.
 
 base_time = datetime.strptime(
     "2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
-timezone = pytz.timezone('Asia/Kolkata')
-base_time = timezone.localize(base_time)
+
 
 class GoldRatesModel(models.Model):
+    """
+    Stores the current rates fetched from the API
+    """
     block_id = models.CharField(max_length=10, null=True)
     expiry = models.DateTimeField(default=base_time)
     gold_buy = models.FloatField(default=0)
@@ -21,15 +23,25 @@ class GoldRatesModel(models.Model):
     gold_buy_gst = models.FloatField(default=0)
     silver_buy_gst = models.FloatField(default=0)
 
+    objects = models.Manager()
+
 
 class GoldTokenModel(models.Model):
+    """
+    Stores the token for the API
+    """
     expiry = models.DateTimeField(default=base_time)
     token = models.CharField(max_length=100, null=True)
     token_type = models.CharField(max_length=20, null=True)
 
+    objects = models.Manager()
+
 
 class GoldInvestorModel(models.Model):
-    user_id = models.OneToOneField(customUser, on_delete=models.CASCADE)
+    """
+    Stores the details of the investor
+    """
+    user_id = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     gold_user_id = ShortUUIDField(
         length=15,
         prefix="goldfi_",
@@ -38,12 +50,17 @@ class GoldInvestorModel(models.Model):
     )
 
     # Nominee Details
-    nomineeName = models.CharField(max_length=100, null=True)
-    nomineeDateOfBirth = models.DateField(null=True)
-    nomineeRelation = models.CharField(max_length=50)
+    nominee_name = models.CharField(max_length=100, null=True)
+    nominee_date_of_birth = models.DateField(null=True)
+    nominee_relation = models.CharField(max_length=50)
+
+    objects = models.Manager()
 
 
 class GoldAddressModel(models.Model):
+    """
+    Stores the address(es) of the investor
+    """
     gold_user_id = models.ForeignKey(
         GoldInvestorModel, on_delete=models.CASCADE)
     address_id = models.CharField(max_length=10)
@@ -52,8 +69,13 @@ class GoldAddressModel(models.Model):
     pincode = models.CharField(max_length=8)
     mobile = models.CharField(max_length=15)
 
+    objects = models.Manager()
+
 
 class GoldBankModel(models.Model):
+    """
+    Stores the bank(s) of the investor
+    """
     gold_user_id = models.ForeignKey(
         GoldInvestorModel, on_delete=models.CASCADE)
     bank_id = models.CharField(max_length=10, null=True, unique=True)
@@ -61,8 +83,13 @@ class GoldBankModel(models.Model):
     account_name = models.CharField(max_length=50)
     ifsc_code = models.CharField(max_length=11)
 
+    objects = models.Manager()
+
 
 class GoldTransactionModel(models.Model):
+    """
+    Stores all transaction details
+    """
     gold_user_id = models.ForeignKey(
         GoldInvestorModel, on_delete=models.CASCADE)
     gold_txn_id = ShortUUIDField(
@@ -70,20 +97,41 @@ class GoldTransactionModel(models.Model):
         primary_key=True,
         default=ShortUUID.uuid
     )
+    txn_id = models.CharField(max_length=100, null=True)
     txn_type = models.CharField(max_length=4)
     block_id = models.CharField(max_length=10)
     lock_price = models.FloatField()
     metal_type = models.CharField(max_length=6)
     amount = models.FloatField()
-    # * Change to choice based
+
     status = models.BooleanField(default=False)
     is_autopay = models.BooleanField(default=False)
     bank_id = models.ForeignKey(
         GoldBankModel, to_field="bank_id", null=True, on_delete=models.SET_NULL)
 
+    objects = models.Manager()
+
+
+class GoldDailySavingsModel(models.Model):
+    """
+    Holds information regarding daily savings
+    """
+    gold_user = models.ForeignKey(GoldInvestorModel, on_delete=models.CASCADE)
+    dailysavings_amount = models.FloatField()
+    startdate = models.DateField()
+    is_active = models.BooleanField(default=True)
+    processed = models.IntegerField(default=0)
+
+    objects = models.Manager()
+
 
 class GoldAutopayModel(models.Model):
-    gold_user = models.ForeignKey(GoldInvestorModel, on_delete=models.CASCADE)
-    autopay_amount = models.IntegerField()
+    """
+    Holds information regarding autopay mandate
+    """
+    gold_user = models.OneToOneField(
+        GoldInvestorModel, on_delete=models.CASCADE)
+    amount = models.FloatField()
     startdate = models.DateField()
-    processed = models.IntegerField(default=0)
+    enddate = models.DateField()
+    mandate_id = models.CharField(max_length=150)

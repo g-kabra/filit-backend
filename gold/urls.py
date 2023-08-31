@@ -4,19 +4,16 @@ from rest_framework import routers
 from . import views
 
 urlpatterns = [
-    path("register/", views.register_user),
-    path("getuser/", views.get_user),
-    path("rates/", views.get_rates_view),
-    path("register-bank/", views.register_bank),
-    path("get-bank/", views.get_banks),
-    path("delete-bank/", views.delete_bank),
-    path("update-bank/", views.update_bank),
-    path("register-address/", views.register_address),
-    path("setnominee/", views.set_nominee),
+    path("user/", views.UserViews.as_view()),
+    path("bank/", views.BankViews.as_view()),
+    path("address/", views.AddressViews.as_view()),
+    path("set-nominee/", views.set_nominee),
     path("buy/", views.buy),
     path("sell/", views.sell),
-    path("start-autopay/", views.start_autopay),
+    path("rates/", views.get_rates_view),
     path("get-passbook/", views.get_passbook),
+    path("get-invoice/", views.get_invoice),
+    path("daily-savings/", views.DailySavingsViews.as_view()),
 ]
 
 router = routers.SimpleRouter()

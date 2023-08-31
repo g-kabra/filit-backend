@@ -1,3 +1,11 @@
+# text files
 savvy_req.txt
 fp_req.txt
+
+#Virtual environments and environment variables
 .env
+/venv
+
+#pycache
+__pycache__/
+migrations/

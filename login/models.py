@@ -6,7 +6,7 @@ from .managers import CustomUserManager
 # Create your models here.
 
 
-class phoneModel(models.Model):
+class PhoneModel(models.Model):
     mobile = models.IntegerField(blank=False)
     counter = models.IntegerField(default=0, blank=False)
 
@@ -14,7 +14,7 @@ class phoneModel(models.Model):
         return str(self.mobile)
 
 
-class emailModel(models.Model):
+class EmailModel(models.Model):
     email = models.EmailField(blank=False)
     counter = models.IntegerField(default=0, blank=False)
 
@@ -22,7 +22,7 @@ class emailModel(models.Model):
         return str(self.email)
 
 
-class customUser(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
     user_id = ShortUUIDField(
         length=20,
         prefix="fi_",
