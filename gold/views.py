@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from gold.models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldRatesModel, GoldTransactionModel, GoldDailySavingsModel
 
 from .functions import make_request, make_response
-from .serializers import BankSerializer, TransactionSerializer
+from .serializers import BankSerializer, TransactionSerializer, DailySavingsSerializer
 
 
 class UserViews(views.APIView):
@@ -573,6 +573,7 @@ class DailySavingsViews(views.APIView):
     """
     Daily savings related views
     """
+
     def post(self, request):
         """
         Start daily savings for a user
@@ -593,9 +594,10 @@ class DailySavingsViews(views.APIView):
         gold_user = gold_user.first()
         startdate = datetime.utcnow().date()
         amount = request.data.get("amount")
-        
-        #? Discontinue previous
-        daily_savings = GoldDailySavingsModel.objects.filter(gold_user=gold_user).first()
+
+        # ? Discontinue previous
+        daily_savings = GoldDailySavingsModel.objects.filter(
+            gold_user=gold_user).first()
         if daily_savings:
             daily_savings.is_active = False
             daily_savings.save()
@@ -609,7 +611,7 @@ class DailySavingsViews(views.APIView):
             "dailysavings_amount": daily_savings.dailysavings_amount,
             "start_date": daily_savings.startdate
         }))
-    
+
     def get(self, request):
         """
         Get daily savings items
@@ -628,7 +630,8 @@ class DailySavingsViews(views.APIView):
                 ]
             ))
         gold_user = gold_user.first()
-        daily_savings = GoldDailySavingsModel.objects.filter(gold_user=gold_user).first()
+        daily_savings = GoldDailySavingsModel.objects.filter(
+            gold_user=gold_user).first()
         if not daily_savings:
             return Response(make_response(
                 "Daily savings not started",
@@ -647,3 +650,45 @@ class DailySavingsViews(views.APIView):
             "is_active": daily_savings.is_active
         }))
 
+    def put(self, request):
+        """
+        Update daily savings items
+        """
+        user = request.user
+        gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+        if not gold_user:
+            return Response(make_response(
+                "User not registered",
+                status=400,
+                errors=[
+                    {
+                        "code": "USER_NOT_REGISTERED",
+                        "message": "User not registered for gold"
+                    }
+                ]
+            ))
+        gold_user = gold_user.first()
+        daily_savings = GoldDailySavingsModel.objects.filter(
+            gold_user=gold_user).first()
+        if not daily_savings:
+            return Response(make_response(
+                "Daily savings not started",
+                status=400,
+                errors=[
+                    {
+                        "code": "DAILY_SAVINGS_NOT_STARTED",
+                        "message": "Daily savings not started for user"
+                    }
+                ]
+            ))
+        serializer = DailySavingsSerializer(
+            daily_savings, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(make_response("Daily savings updated successfully", data=serializer.data))
+        return Response(make_response("Couldn't update daily savings", data=serializer.errors, status=400, errors=[
+            {
+                "code": "DAILY_SAVINGS_UPDATE_FAILED",
+                "message": "Couldn't update daily savings"
+            }
+        ]))

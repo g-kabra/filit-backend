@@ -121,17 +121,9 @@ class GoldDailySavingsModel(models.Model):
     startdate = models.DateField()
     is_active = models.BooleanField(default=True)
     processed = models.IntegerField(default=0)
+    multiplier = models.IntegerField(default=1)
 
     objects = models.Manager()
 
 
-class GoldAutopayModel(models.Model):
-    """
-    Holds information regarding autopay mandate
-    """
-    gold_user = models.OneToOneField(
-        GoldInvestorModel, on_delete=models.CASCADE)
-    amount = models.FloatField()
-    startdate = models.DateField()
-    enddate = models.DateField()
-    mandate_id = models.CharField(max_length=150)
+

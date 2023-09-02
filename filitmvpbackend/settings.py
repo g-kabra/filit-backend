@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     "drf_yasg",
     # User Defined Apps
     "login",
-    "gold"
+    "gold",
+    "payments"
 ]
 
 MIDDLEWARE = [
@@ -85,6 +86,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "filitmvpbackend.wsgi.application"
 
+USE_TZ=False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
