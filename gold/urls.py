@@ -13,7 +13,6 @@ urlpatterns = [
     path("rates/", views.get_rates_view),
     path("get-passbook/", views.get_passbook),
     path("get-invoice/", views.get_invoice),
-    path("daily-savings/", views.DailySavingsViews.as_view()),
 ]
 
 router = routers.SimpleRouter()

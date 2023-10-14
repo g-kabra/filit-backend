@@ -14,6 +14,13 @@ class TransactionDetails(models.Model):
     """
     Stores the details of the payment transaction
     """
+    INTENTS = [
+        (1, "GOLD"),
+    ]
+    TYPES = [
+        (1, "MANUAL"),
+        (2, "AUTOPAY")
+    ]
     txn_id = ShortUUIDField(
         length=15,
         prefix="pefi_",
@@ -21,18 +28,23 @@ class TransactionDetails(models.Model):
         default=ShortUUID.uuid
     )
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    amount = models.IntegerField(default=0)
+    amount = models.BigIntegerField(default=0)
     completion_status = models.BooleanField(default=False)
+    intent = models.CharField(max_length=1, choices=INTENTS, default="GOLD")
+    txn_type = models.CharField(max_length=1, choices=TYPES, default="MANUAL")
 
     payment_instrument = models.CharField(max_length=20, null=True)
     payment_id = models.CharField(max_length=50, null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     objects = models.Manager()
 
 
 class AutopayModel(models.Model):
     """
-    Holds information regarding autopay mandate
+    Holds information regarding autopay mandate (subscription)
     """
     STATES = [
         (1, "CREATED"),
@@ -55,7 +67,7 @@ class AutopayModel(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     amount = models.FloatField()  # In paise
     startdate = models.DateField()
-    count = models.IntegerField()
+    count = models.BigIntegerField()
     status = models.CharField(max_length=1, choices=STATES, default="CREATED")
     valid_till = models.DateTimeField(default=None, null=True)
     phonepe_subscription_id = models.CharField(max_length=100, null=True)

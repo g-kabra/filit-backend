@@ -4,7 +4,7 @@ from django.db import models
 from shortuuid.django_fields import ShortUUIDField, ShortUUID
 
 from login.models import CustomUser
-# Create your models here.
+from payments.models import TransactionDetails
 
 base_time = datetime.strptime(
     "2000-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
@@ -31,7 +31,7 @@ class GoldTokenModel(models.Model):
     Stores the token for the API
     """
     expiry = models.DateTimeField(default=base_time)
-    token = models.CharField(max_length=100, null=True)
+    token = models.CharField(max_length=1500, null=True)
     token_type = models.CharField(max_length=20, null=True)
 
     objects = models.Manager()
@@ -90,6 +90,12 @@ class GoldTransactionModel(models.Model):
     """
     Stores all transaction details
     """
+    STATES = [
+        (1, "CREATED"),
+        (2, "LOCKED"),
+        (3, "COMPLETED"),
+    ]
+
     gold_user_id = models.ForeignKey(
         GoldInvestorModel, on_delete=models.CASCADE)
     gold_txn_id = ShortUUIDField(
@@ -98,13 +104,16 @@ class GoldTransactionModel(models.Model):
         default=ShortUUID.uuid
     )
     txn_id = models.CharField(max_length=100, null=True)
+    payment_id = models.ForeignKey(
+        TransactionDetails, on_delete=models.CASCADE, null=True)
     txn_type = models.CharField(max_length=4)
     block_id = models.CharField(max_length=10)
+    timestamp = models.DateTimeField(default=datetime.now)
     lock_price = models.FloatField()
     metal_type = models.CharField(max_length=6)
     amount = models.FloatField()
 
-    status = models.BooleanField(default=False)
+    status = models.CharField(max_length=1, choices=STATES, default=1)
     is_autopay = models.BooleanField(default=False)
     bank_id = models.ForeignKey(
         GoldBankModel, to_field="bank_id", null=True, on_delete=models.SET_NULL)
@@ -112,18 +121,13 @@ class GoldTransactionModel(models.Model):
     objects = models.Manager()
 
 
-class GoldDailySavingsModel(models.Model):
+class GoldHoldingsModel(models.Model):
     """
-    Holds information regarding daily savings
+    Holds portfolio information
     """
     gold_user = models.ForeignKey(GoldInvestorModel, on_delete=models.CASCADE)
-    dailysavings_amount = models.FloatField()
-    startdate = models.DateField()
-    is_active = models.BooleanField(default=True)
-    processed = models.IntegerField(default=0)
-    multiplier = models.IntegerField(default=1)
+    gold_held = models.FloatField(default=0)
+    gold_locked = models.FloatField(default=0)
 
+    last_processed = models.DateTimeField(default=datetime.now)
     objects = models.Manager()
-
-
-

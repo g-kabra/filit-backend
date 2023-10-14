@@ -15,4 +15,5 @@ urlpatterns = [
     path("verify-subscription/", views.verify_subscription),
     path("cancel-subscription/", views.cancel_subscription),
     path("check-subscription/", views.check_subscription),
+    path("orders/", views.get_order_history),
 ]

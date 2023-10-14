@@ -1,16 +1,14 @@
 """
 Views for the payment app
 """
-import json
 from datetime import datetime
+from django.core.paginator import Paginator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 
 from .models import TransactionDetails, AutopayModel, AuthRequest
 from .serializers import TransactionSerializer, AutopaySerializer
 from .functions import make_pay_request, make_response, check_checksum, decipher_callback
-# Create your views here.
-
 
 @api_view(["POST"])
 def create_transaction(request):
@@ -282,3 +280,16 @@ def check_subscription(request):
     if subscription.first():
         return Response(make_response("Subscription active", data=AutopaySerializer(subscription.first()).data))
     return Response("Subscription not active", status=400)
+
+@api_view(["GET"])
+def get_order_history(request):
+    """
+    DESCRIPTION
+        Get all orders for the given user
+    """
+    user = request.user
+    orders = TransactionDetails.objects.filter(user_id=user).order_by('-updated_at')
+    paginator = Paginator(orders, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return Response(make_response("Orders fetched successfully", data={'items': TransactionSerializer(page_obj.object_list, many=True).data, 'has_next': page_obj.has_next()}))

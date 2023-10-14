@@ -1,4 +1,4 @@
-from .models import GoldTransactionModel, GoldBankModel, GoldDailySavingsModel
+from .models import GoldTransactionModel, GoldBankModel
 
 from rest_framework import serializers
 
@@ -11,9 +11,4 @@ class TransactionSerializer(serializers.ModelSerializer):
 class BankSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoldBankModel
-        fields = '__all__'
-
-class DailySavingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GoldDailySavingsModel
         fields = '__all__'
