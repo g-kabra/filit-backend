@@ -90,6 +90,8 @@ class UserTotalSavings(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     savings = models.BigIntegerField(default=0)
 
+    current_savings = models.BigIntegerField(default=0)
+
     daily_savings = models.BigIntegerField(default=0)
     fillups = models.BigIntegerField(default=0)
 

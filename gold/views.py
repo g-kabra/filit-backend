@@ -448,9 +448,10 @@ def buy(request):
     }
     response = make_request("/merchant/v1/buy", body=payload)
     if (response.status_code == 200):
-        holding = GoldHoldingsModel.objects.get_or_create(gold_user_id=gold_user)
+        holding, c = GoldHoldingsModel.objects.get_or_create(gold_user_id=gold_user)
         txn.txn_id = response.json()["result"]["data"]["transactionId"]
-        holding.gold_locked +=  response.json()["result"]["data"]["quantity"]
+        txn.quantity = response.json()["result"]["data"]["quantity"]
+        holding.gold_locked += response.json()["result"]["data"]["quantity"]
         txn.status = "LOCKED"
         txn.save()
     return Response(response.json())

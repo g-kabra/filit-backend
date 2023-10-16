@@ -17,6 +17,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework import views, viewsets
 
+from payments.functions import make_debit_request
+
 
 from .models import FillUp, PhoneModel, EmailModel, CustomUser, UserDailySavings, UserTotalSavings
 from .serializers import CustomUserSerializer, DailySavingsSerializer, FillUpSerializer, UserTotalSavingsSerializer
@@ -316,8 +318,11 @@ class FillUpViews(views.APIView):
         user_savings.todays_savings += fillup_value
         user_savings.monthly_savings += fillup_value
         user_savings.todays_spendings += base_value
+        if(user_savings.current_savings >= 100):
+            amount = user_savings.current_savings
+            user_savings.current_savings = 0
+            make_debit_request(user=user, amount=amount*100)
         user_savings.save()
-
         return Response(make_response("Fillup created successfully", data=FillUpSerializer(fillup).data))
 
     def get(self, request):

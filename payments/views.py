@@ -6,6 +6,8 @@ from django.core.paginator import Paginator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 
+from login.models import CustomUser
+
 from .models import TransactionDetails, AutopayModel, AuthRequest
 from .serializers import TransactionSerializer, AutopaySerializer
 from .functions import make_pay_request, make_response, check_checksum, decipher_callback
@@ -16,7 +18,7 @@ def create_transaction(request):
     DESCRIPTION
         This view will create a transaction for the given user.
     """
-    user = request.user
+    user : CustomUser = request.user
     amount = request.data.get("amount")
     txn = TransactionDetails.objects.create(
         user_id=user,
@@ -293,3 +295,34 @@ def get_order_history(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return Response(make_response("Orders fetched successfully", data={'items': TransactionSerializer(page_obj.object_list, many=True).data, 'has_next': page_obj.has_next()}))
+
+@api_view(["POST"])
+@permission_classes([])
+@authentication_classes([])
+def verify_auto_debit(request):
+    """
+    DESCRIPTION
+        This view will verify the debit request for the given user.
+    """
+    print("Debit callback received")
+    try:
+        if not check_checksum(request.headers["X-VERIFY"], request.data["response"]):
+            print("Checksum failed")
+            return Response("Invalid Checksum")
+    except KeyError:
+            return Response("Key Error")
+    data = decipher_callback(request.data["response"])
+    if data["code"] == "SUCCESS":
+        data = data["data"]
+        if(data["callbackType"] == "NOTIFY"):
+            return Response("Notification failed")
+        if(data["transactionDetails"]["state"] == "FAILED"):
+            return Response("Payment Failed")
+        txn = TransactionDetails.objects.filter(txn_id=data["merchantTransactionId"]).first()
+        if (not txn or txn.amount != data["amount"]):
+            return Response("Invalid Transaction")
+        txn.completion_status = True
+        print("Payment Succeeded")
+        return Response("Payment Succeeded")
+    print("Payment Failed")
+    return Response("Payment Failed")

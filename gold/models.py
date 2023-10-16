@@ -108,10 +108,11 @@ class GoldTransactionModel(models.Model):
         TransactionDetails, on_delete=models.CASCADE, null=True)
     txn_type = models.CharField(max_length=4)
     block_id = models.CharField(max_length=10)
-    timestamp = models.DateTimeField(default=datetime.now)
+    timestamp = models.DateTimeField(auto_now_add=True)
     lock_price = models.FloatField()
     metal_type = models.CharField(max_length=6)
-    amount = models.FloatField()
+    amount = models.FloatField(default=0)
+    quantity = models.FloatField(default=0)
 
     status = models.CharField(max_length=1, choices=STATES, default=1)
     is_autopay = models.BooleanField(default=False)

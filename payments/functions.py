@@ -6,6 +6,9 @@ import os
 import hashlib
 import base64
 import requests
+from login.models import CustomUser
+
+from payments.models import AutopayModel, TransactionDetails
 
 BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 BASE_HEADERS = {
@@ -41,6 +44,28 @@ def make_pay_request(relative_url, body: dict = None, callback: str = None):
     return requests.post(BASE_URL + relative_url, headers=headers, json=body, timeout=5000)
 
 
+def make_debit_request(user: CustomUser, amount):
+    """
+    DESCRIPTION
+        Uses subscription to make a debit request.
+    """
+    subscription = AutopayModel.objects.filter(user_id=user).first()
+    if not subscription or subscription.status != "ACTIVE":
+        return
+    txn = TransactionDetails.objects.create(
+        user=user, amount=amount, txn_type="AUTOPAY")
+    body = {
+        "merchantUserId": user.user_id,
+        "transactionId": txn.txn_id,
+        "subscriptionId": subscription.subscription_id,
+        "autoDebit": True,
+        "amount": amount,
+    }
+    relative_url = "/v3/recurring/debit/init"
+    callback = "http://api.filit.in/payments/callback-debit/"
+    response = make_pay_request(relative_url, body, callback)
+
+
 def make_response(details="", data=None, status=200, errors=None):
     """
     DESCRIPTION
@@ -58,6 +83,7 @@ def make_response(details="", data=None, status=200, errors=None):
     ret['errors'] = errors
     return ret
 
+
 def decipher_callback(data: str):
     """
     DESCRIPTION
@@ -67,6 +93,7 @@ def decipher_callback(data: str):
     data = data.decode()
     data = json.loads(data)
     return data
+
 
 def check_checksum(x_verify: str, data: str):
     """
