@@ -170,7 +170,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated:
             if self.request.user.is_admin:
                 return self.queryset
-            return self.queryset.filter(user=self.request.user)
+            return self.queryset.filter(user_id=self.request.user.user_id)
         return None
 
 

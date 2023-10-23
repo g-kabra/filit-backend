@@ -26,11 +26,12 @@ app.autodiscover_tasks()
 def debug_task(self):
     print(f'Request: {self.request!r}')
 
+
 app.conf.beat_schedule = {
-    #Scheduler Name
+    # Scheduler Name
     'update-gold-status': {
         # Task Name (Name Specified in Decorator)
-        'task': 'update_locked_gold',  
+        'task': 'update_locked_gold',
         # Schedule
         'schedule': crontab(minute='*/30'),
     },
@@ -38,4 +39,4 @@ app.conf.beat_schedule = {
         'task': 'add_daily_savings',
         'schedule': crontab(hour=5, minute=0),
     },
-}  
+}
