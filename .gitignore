@@ -9,3 +9,5 @@ fp_req.txt
 #pycache
 __pycache__/
 migrations/
+
+static/
