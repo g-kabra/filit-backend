@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
     "api.filit.in",
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "django_celery_results",
     "django_celery_beat",
+    "corsheaders",
     # User Defined Apps
     "login",
     "gold",
@@ -60,6 +62,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

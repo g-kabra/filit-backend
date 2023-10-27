@@ -11,7 +11,7 @@ from gold.models import GoldAddressModel, GoldBankModel, GoldInvestorModel, Gold
 from payments.models import TransactionDetails
 
 from .functions import make_request, make_response
-from .serializers import BankSerializer, TransactionSerializer
+from .serializers import BankSerializer, HoldingSerializer, TransactionSerializer
 
 
 class UserViews(views.APIView):
@@ -448,7 +448,8 @@ def buy(request):
     }
     response = make_request("/merchant/v1/buy", body=payload)
     if (response.status_code == 200):
-        holding, c = GoldHoldingsModel.objects.get_or_create(gold_user_id=gold_user)
+        holding, c = GoldHoldingsModel.objects.get_or_create(
+            gold_user_id=gold_user)
         txn.txn_id = response.json()["result"]["data"]["transactionId"]
         txn.quantity = response.json()["result"]["data"]["quantity"]
         holding.gold_locked += response.json()["result"]["data"]["quantity"]
@@ -570,10 +571,9 @@ def get_passbook(request):
             ]
         ))
     gold_user = gold_user.first()
-
-    response = make_request("/merchant/v1/users/" +
-                            gold_user.gold_user_id+"/passbook", method="GET")
-    return Response(response.json())
+    holding, c = GoldHoldingsModel.objects.get_or_create(
+        gold_user=gold_user)
+    return Response(make_response("Passbook fetched successfully", data=HoldingSerializer(holding).data))
 
 
 @api_view(["GET"])
@@ -598,5 +598,3 @@ def get_invoice(request):
     txn_id = request.data.get("txn_id")
     response = make_request("/merchant/v1/invoice/" + txn_id, method="GET")
     return Response(response.json())
-
-
