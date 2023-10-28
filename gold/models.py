@@ -114,7 +114,7 @@ class GoldTransactionModel(models.Model):
     amount = models.FloatField(default=0)
     quantity = models.FloatField(default=0)
 
-    status = models.CharField(max_length=1, choices=STATES, default=1)
+    status = models.CharField(max_length=10, choices=STATES, default=1)
     is_autopay = models.BooleanField(default=False)
     bank_id = models.ForeignKey(
         GoldBankModel, to_field="bank_id", null=True, on_delete=models.SET_NULL)

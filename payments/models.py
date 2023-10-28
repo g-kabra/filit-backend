@@ -30,8 +30,8 @@ class TransactionDetails(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     amount = models.BigIntegerField(default=0)
     completion_status = models.BooleanField(default=False)
-    intent = models.CharField(max_length=1, choices=INTENTS, default="GOLD")
-    txn_type = models.CharField(max_length=1, choices=TYPES, default="MANUAL")
+    intent = models.CharField(max_length=4, choices=INTENTS, default="GOLD")
+    txn_type = models.CharField(max_length=7, choices=TYPES, default="MANUAL")
 
     payment_instrument = models.CharField(max_length=20, null=True)
     payment_id = models.CharField(max_length=50, null=True)
@@ -68,7 +68,7 @@ class AutopayModel(models.Model):
     amount = models.FloatField()  # In paise
     startdate = models.DateField()
     count = models.BigIntegerField()
-    status = models.CharField(max_length=1, choices=STATES, default="CREATED")
+    status = models.CharField(max_length=20, choices=STATES, default="CREATED")
     valid_till = models.DateTimeField(default=None, null=True)
     phonepe_subscription_id = models.CharField(max_length=100, null=True)
 
