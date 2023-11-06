@@ -94,11 +94,14 @@ class UserTotalSavings(models.Model):
 
     daily_savings = models.BigIntegerField(default=0)
     fillups = models.BigIntegerField(default=0)
-
+    
     fillup_multiplier = models.BigIntegerField(default=1)
     fillup_is_active = models.BooleanField(default=False)
-
+    #Monthly updated
     monthly_savings = models.BigIntegerField(default=0)
+    monthly_fillups = models.BigIntegerField(default=0)
+    monthly_daily_savings = models.BigIntegerField(default=0)
+    #Daily updated
     todays_savings = models.BigIntegerField(default=0)
     todays_spendings = models.BigIntegerField(default=0)
 

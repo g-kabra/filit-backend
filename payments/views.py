@@ -7,10 +7,12 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.response import Response
 
 from login.models import CustomUser
+from gold.functions import buy
 
 from .models import TransactionDetails, AutopayModel, AuthRequest
 from .serializers import TransactionSerializer, AutopaySerializer
 from .functions import make_pay_request, make_response, check_checksum, decipher_callback
+
 
 @api_view(["POST"])
 def create_transaction(request):
@@ -18,7 +20,7 @@ def create_transaction(request):
     DESCRIPTION
         This view will create a transaction for the given user.
     """
-    user : CustomUser = request.user
+    user: CustomUser = request.user
     amount = request.data.get("amount")
     txn = TransactionDetails.objects.create(
         user_id=user,
@@ -28,7 +30,7 @@ def create_transaction(request):
         "merchantTransactionId": txn.txn_id,
         "amount": amount,
         "merchantUserId": user.user_id,
-        "callbackUrl": "20.212.232.253:8000/payments/verify/",
+        "callbackUrl": "https://api.filit.in/payments/verify/",
         "redirectUrl": "https://filit.in/",
         "redirectMode": "REDIRECT",
         "paymentInstrument": {
@@ -37,6 +39,7 @@ def create_transaction(request):
     }
     response = make_pay_request("/pg/v1/pay", payload)
     return Response(response.json())
+
 
 @api_view(["POST"])
 @permission_classes([])
@@ -52,16 +55,17 @@ def verify_transaction(request):
             print("Checksum failed")
             return Response("Invalid Checksum")
     except KeyError:
-            return Response("Key Error")
+        return Response("Key Error")
     data = decipher_callback(request.data["response"])
+    data = data["data"]
+    txn = TransactionDetails.objects.filter(
+        txn_id=data["merchantTransactionId"])
     if data["code"] == "PAYMENT_SUCCESS":
-        data = data["data"]
-        txn = TransactionDetails.objects.filter(txn_id=data["merchantTransactionId"])
         print(data)
         if (not txn.exists() or txn.amount != data["amount"]):
             return Response("Invalid Transaction")
         txn = txn.first()
-        txn.completion_status = True
+        txn.completion_status = "SUCCESS"
         txn.payment_instrument = data["paymentInstrument"]["type"]
         if data["paymentInstrument"]["type"] == "UPI":
             txn.payment_id = data["paymentInstrument"]["utr"]
@@ -70,8 +74,12 @@ def verify_transaction(request):
         txn.save()
         print("Payment Succeeded")
         return Response("Payment Succeeded")
+    if txn.exists():
+        txn = txn.first()
+        txn.completion_status = "FAILED"
     print("Payment Failed")
     return Response("Payment Failed")
+
 
 @api_view(["GET"])
 def get_payments(request):
@@ -81,7 +89,10 @@ def get_payments(request):
     """
     user = request.user
     txn = TransactionDetails.objects.filter(user_id=user)
-    return Response(make_response("Data fetched successfully", data=TransactionSerializer(txn, many=True).data))
+    paginator = Paginator(txn, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return Response(make_response("Data fetched successfully", data={'items': TransactionSerializer(page_obj.object_list, many=True).data, 'has_next': page_obj.has_next()}))
 
 
 @api_view(["POST"])
@@ -97,6 +108,7 @@ def check_payment(request):
         return Response(make_response("Transaction doesn't exist", status=400))
     return Response(make_response("Data fetched successfully", data=TransactionSerializer(txn.first()).data))
 
+
 @api_view(["GET"])
 def start_subscription(request):
     """
@@ -106,7 +118,7 @@ def start_subscription(request):
         subscriptionName
         authWorkflowType -> PENNY_DROP
         amountType -> VARIABLE
-        amount -> 1500
+        amount -> 1500 (150000 paise) 
         frequency -> DAILY
         recurringCount -> 365
         description
@@ -148,7 +160,8 @@ def start_subscription(request):
     response = make_pay_request("/v3/recurring/subscription/create", payload)
     if response.status_code == 200:
         autopay.status = "CREATED"
-        autopay.valid_till = datetime.fromtimestamp(float(response.json()["data"]["validUpto"])/1000, tz=None)
+        autopay.valid_till = datetime.fromtimestamp(
+            float(response.json()["data"]["validUpto"])/1000, tz=None)
         autopay.phonepe_subscription_id = response.json()[
             "data"]["subscriptionId"]
         autopay.save()
@@ -157,6 +170,7 @@ def start_subscription(request):
     autopay.status = "FAILED"
     autopay.save()
     return Response(make_response("Subscription initiation failed", data=response.json(), status=400))
+
 
 @api_view(["POST"])
 def cancel_subscription(request):
@@ -192,6 +206,7 @@ def cancel_subscription(request):
         }
     ], status=400))
 
+
 @api_view(["GET"])
 def authorize_subscription(request):
     """
@@ -212,7 +227,8 @@ def authorize_subscription(request):
     subscription = subscription.first()
     current_time = datetime.now()
     current_time = current_time.replace(tzinfo=None)
-    subscription.valid_till = subscription.valid_till.replace(tzinfo=None) #? Have to add proper support later
+    subscription.valid_till = subscription.valid_till.replace(
+        tzinfo=None)  # ? Have to add proper support later
     if subscription.valid_till < current_time:
         return Response(make_response("Subscription has expired",
                                       status=400,
@@ -233,7 +249,7 @@ def authorize_subscription(request):
         "authRequestId": auth.auth_id,
     }
     response = make_pay_request("/v3/recurring/auth/init", payload,
-                                callback="20.212.232.253/payments/verify-subscription/")
+                                callback="https://api.filit.in/payments/verify-subscription/")
     if response.status_code == 200:
         auth.status = True
         auth.save()
@@ -244,6 +260,7 @@ def authorize_subscription(request):
             "message":response.json()["message"]
         }
     ], status=400))
+
 
 @api_view(["POST"])
 @permission_classes([])
@@ -259,17 +276,19 @@ def verify_subscription(request):
             print("Checksum failed")
             return Response("Invalid Checksum")
     except KeyError:
-            return Response("Key Error")
+        return Response("Key Error")
     data = decipher_callback(request.data["response"])
     if data["code"] == "SUCCESS":
         data = data["data"]
-        auth = AuthRequest.objects.filter(subscription_id=data["authRequestId"])
+        auth = AuthRequest.objects.filter(
+            subscription_id=data["authRequestId"])
         subscription = auth.subscription
         if subscription.amount != data["amount"]:
             return Response("Invalid Transaction")
         subscription.status = "ACTIVE"
         return Response("Subscription Activated")
     return Response("Invalid Request")
+
 
 @api_view(["GET"])
 def check_subscription(request):
@@ -283,6 +302,7 @@ def check_subscription(request):
         return Response(make_response("Subscription active", data=AutopaySerializer(subscription.first()).data))
     return Response("Subscription not active", status=400)
 
+
 @api_view(["GET"])
 def get_order_history(request):
     """
@@ -290,11 +310,13 @@ def get_order_history(request):
         Get all orders for the given user
     """
     user = request.user
-    orders = TransactionDetails.objects.filter(user_id=user).order_by('-updated_at')
+    orders = TransactionDetails.objects.filter(
+        user_id=user).order_by('-updated_at')
     paginator = Paginator(orders, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return Response(make_response("Orders fetched successfully", data={'items': TransactionSerializer(page_obj.object_list, many=True).data, 'has_next': page_obj.has_next()}))
+
 
 @api_view(["POST"])
 @permission_classes([])
@@ -310,19 +332,28 @@ def verify_auto_debit(request):
             print("Checksum failed")
             return Response("Invalid Checksum")
     except KeyError:
-            return Response("Key Error")
+        return Response("Key Error")
     data = decipher_callback(request.data["response"])
     if data["code"] == "SUCCESS":
         data = data["data"]
-        if(data["callbackType"] == "NOTIFY"):
+        if (data["callbackType"] == "NOTIFY"):
             return Response("Notification failed")
-        if(data["transactionDetails"]["state"] == "FAILED"):
+        if (data["transactionDetails"]["state"] == "FAILED"):
             return Response("Payment Failed")
-        txn = TransactionDetails.objects.filter(txn_id=data["merchantTransactionId"]).first()
-        if (not txn or txn.amount != data["amount"]):
+        txn = TransactionDetails.objects.filter(
+            txn_id=data["merchantTransactionId"]).first()
+        if (not txn):
             return Response("Invalid Transaction")
-        txn.completion_status = True
-        print("Payment Succeeded")
-        return Response("Payment Succeeded")
+        if (txn.amount != data["amount"]):
+            txn.completion_status = "FAILED"
+            txn.save()
+            return Response("Invalid Transaction")
+        txn.completion_status = "SUCCESS"
+        user = txn.user_id
+        status, response = buy(user, txn)
+        if status and response.status_code == 200:
+            print("Payment Succeeded")
+            txn.save()
+            return Response("Payment Succeeded")
     print("Payment Failed")
     return Response("Payment Failed")

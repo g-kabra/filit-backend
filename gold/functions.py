@@ -1,8 +1,10 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
-from .models import GoldTokenModel
+from login.models import CustomUser
+from gold.models import GoldHoldingsModel, GoldRatesModel, GoldTokenModel, GoldTransactionModel, GoldInvestorModel
+from payments.models import TransactionDetails
 
 BASE_URL = "https://uat-api.augmontgold.com/api"
 BASE_HEADERS = {
@@ -76,3 +78,75 @@ def make_response(details="", data=None, status=200, errors=None):
         errors = []
     ret['errors'] = errors
     return ret
+
+
+def get_rates():
+    """
+    Get latest updated rates from Augmont
+    """
+    rates = GoldRatesModel.objects.first()
+    if not rates:
+        rates = GoldRatesModel.objects.create()
+    curr_time = datetime.utcnow()
+    expiry = rates.expiry
+    expiry = expiry.replace(tzinfo=None)
+    if expiry <= curr_time:
+        response = make_request("/merchant/v1/rates", method="GET")
+        response = response.json()
+        rates.expiry = datetime.utcnow() + timedelta(minutes=2)
+        rates.block_id = response["result"]["data"]["blockId"]
+        rates.gold_buy = response["result"]["data"]["rates"]["gBuy"]
+        rates.silver_buy = response["result"]["data"]["rates"]["sBuy"]
+        rates.gold_sell = response["result"]["data"]["rates"]["gSell"]
+        rates.silver_sell = response["result"]["data"]["rates"]["sSell"]
+        rates.gold_buy_gst = response["result"]["data"]["rates"]["gBuyGst"]
+        rates.silver_buy_gst = response["result"]["data"]["rates"]["sBuyGst"]
+        rates.save()
+    return rates
+
+
+def buy(user: CustomUser, transaction: TransactionDetails):
+    """
+    Buy from Augmont
+    """
+    gold_user = GoldInvestorModel.objects.filter(user_id=user.user_id)
+    if not gold_user:
+        return False, "User not found"
+    gold_user = gold_user.first()
+
+    if not transaction.completion_status == "SUCCESS":
+        return False, "Transaction not completed"
+
+    rates = get_rates()
+    is_autopay = True
+    lock_price = rates.gold_buy
+
+    gold_txn = GoldTransactionModel.objects.create(
+        gold_user_id=gold_user,
+        payment_id=transaction.payment_id,
+        txn_type="buy",
+        block_id=rates.block_id,
+        lock_price=lock_price,
+        metal_type="GOLD",
+        amount=transaction.amount,
+        is_autopay=is_autopay
+    )
+    payload = {
+        "lockPrice": lock_price,
+        "metalType": "GOLD",
+        "amount": gold_txn.amount,
+        "merchantTransactionId": gold_txn.gold_txn_id,
+        "uniqueId": gold_user.gold_user_id,
+        "blockId": rates.block_id
+    }
+    response = make_request("/merchant/v1/buy", body=payload)
+    if (response.status_code == 200):
+        holding, c = GoldHoldingsModel.objects.get_or_create(
+            gold_user_id=gold_user)
+        gold_txn.txn_id = response.json()["result"]["data"]["transactionId"]
+        gold_txn.quantity = response.json()["result"]["data"]["quantity"]
+        holding.gold_locked += response.json()["result"]["data"]["quantity"]
+        gold_txn.status = "LOCKED"
+        gold_txn.save()
+        holding.save()
+    return True, response

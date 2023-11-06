@@ -5,6 +5,8 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 
+from datetime import datetime
+
 from login.models import UserDailySavings, UserTotalSavings
 from payments.functions import make_debit_request
 
@@ -20,10 +22,26 @@ def add_daily_savings():
         total_savings.todays_savings += savings.daily_savings_amount
         total_savings.monthly_savings += savings.daily_savings_amount
         total_savings.current_savings += savings.daily_savings_amount
+
         if(total_savings.current_savings >= 100):
             amount = total_savings.current_savings
             total_savings.current_savings = 0
-            make_debit_request(user=savings.user, amount=amount*100)
-        total_savings.save()
-        savings.processed += 1
+            res = make_debit_request(user=savings.user, amount=amount*100)
+        if res:
+            total_savings.save()
+            savings.processed += 1
+            savings.save()
+
+@shared_task(name='scheduled_reset_data')
+def scheduled_reset_data():
+    """
+        Resets the daily/monthly savings data for all users.
+    """
+    for savings in UserTotalSavings.objects.filter():
+        if datetime.now().day == 1:
+            savings.monthly_savings = 0
+            savings.monthly_fillups = 0
+            savings.monthly_daily_savings = 0
+        savings.todays_savings = 0
+        savings.todays_spendings = 0
         savings.save()

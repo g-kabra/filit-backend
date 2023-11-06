@@ -21,6 +21,11 @@ class TransactionDetails(models.Model):
         (1, "MANUAL"),
         (2, "AUTOPAY")
     ]
+    status = [
+        (1, "INITIATED"),
+        (2, "SUCCESS"),
+        (3, "FAILED")
+    ]
     txn_id = ShortUUIDField(
         length=15,
         prefix="pefi_",
@@ -29,7 +34,7 @@ class TransactionDetails(models.Model):
     )
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     amount = models.BigIntegerField(default=0)
-    completion_status = models.BooleanField(default=False)
+    completion_status = models.CharField(max_length=10, choices=status, default=1)
     intent = models.CharField(max_length=4, choices=INTENTS, default="GOLD")
     txn_type = models.CharField(max_length=7, choices=TYPES, default="MANUAL")
 

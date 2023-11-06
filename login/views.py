@@ -190,7 +190,7 @@ class DailySavingsViews(views.APIView):
 
         # ? Discontinue previous
         daily_savings = UserDailySavings.objects.filter(
-            user=user).first()
+            user=user, is_active=True).first()
         if daily_savings:
             daily_savings.is_active = False
             daily_savings.save()
@@ -266,7 +266,7 @@ class DailySavingsViews(views.APIView):
         """
         user = request.user
         daily_savings = UserDailySavings.objects.filter(
-            user=user).first()
+            user=user, is_active=True).first()
         if not daily_savings:
             return Response(make_response(
                 "Daily savings not started",

@@ -51,7 +51,7 @@ def make_debit_request(user: CustomUser, amount):
     """
     subscription = AutopayModel.objects.filter(user_id=user).first()
     if not subscription or subscription.status != "ACTIVE":
-        return
+        return False
     txn = TransactionDetails.objects.create(
         user=user, amount=amount, txn_type="AUTOPAY")
     body = {
@@ -62,9 +62,9 @@ def make_debit_request(user: CustomUser, amount):
         "amount": amount,
     }
     relative_url = "/v3/recurring/debit/init"
-    callback = "http://api.filit.in/payments/callback-debit/"
+    callback = "https://api.filit.in/payments/callback-debit/"
     response = make_pay_request(relative_url, body, callback)
-
+    return response.status_code < 300
 
 def make_response(details="", data=None, status=200, errors=None):
     """

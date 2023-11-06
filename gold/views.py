@@ -7,10 +7,10 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from gold.models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldRatesModel, GoldTransactionModel, GoldHoldingsModel
+from .models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldRatesModel, GoldTransactionModel, GoldHoldingsModel
 from payments.models import TransactionDetails
 
-from .functions import make_request, make_response
+from .functions import make_request, make_response, get_rates
 from .serializers import BankSerializer, HoldingSerializer, TransactionSerializer
 
 
@@ -106,9 +106,9 @@ def set_nominee(request):
         ))
     gold_user = gold_user.first()
     payload = {
-        "nomineeName": request.data.get("name"),
-        "nomineeRelation": request.data.get("relation"),
-        "nomineeDateOfBirth": request.data.get("dob"),
+        "nomineeName": request.data.get("nomineeName"),
+        "nomineeRelation": request.data.get("nomineeRelation"),
+        "nomineeDateOfBirth": request.data.get("nomineeDateOfBirth"),
         "userName": user.first_name + " " + user.last_name,
         "userPincode": user.pincode,
     }
@@ -148,9 +148,9 @@ class BankViews(views.APIView):
             ))
         gold_user = gold_user.first()
         payload = {
-            "accountNumber": request.data.get("account_number"),
-            "accountName": request.data.get("account_name"),
-            "ifscCode": request.data.get("ifsc_code"),
+            "accountNumber": request.data.get("accountNumber"),
+            "accountName": request.data.get("accountName"),
+            "ifscCode": request.data.get("ifscCode"),
         }
         response = make_request(
             "/merchant/v1/users/" + gold_user.gold_user_id+"/banks", body=payload)
@@ -333,32 +333,6 @@ class AddressViews(views.APIView):
         GoldAddressModel.objects.get(address_id=address_id).delete()
         return Response(response.json())
 
-
-def get_rates():
-    """
-    Get latest updated rates from Augmont
-    """
-    rates = GoldRatesModel.objects.first()
-    if not rates:
-        rates = GoldRatesModel.objects.create()
-    curr_time = datetime.utcnow()
-    expiry = rates.expiry
-    expiry = expiry.replace(tzinfo=None)
-    if expiry <= curr_time:
-        response = make_request("/merchant/v1/rates", method="GET")
-        response = response.json()
-        rates.expiry = datetime.utcnow() + timedelta(minutes=1)
-        rates.block_id = response["result"]["data"]["blockId"]
-        rates.gold_buy = response["result"]["data"]["rates"]["gBuy"]
-        rates.silver_buy = response["result"]["data"]["rates"]["sBuy"]
-        rates.gold_sell = response["result"]["data"]["rates"]["gSell"]
-        rates.silver_sell = response["result"]["data"]["rates"]["sSell"]
-        rates.gold_buy_gst = response["result"]["data"]["rates"]["gBuyGst"]
-        rates.silver_buy_gst = response["result"]["data"]["rates"]["sBuyGst"]
-        rates.save()
-    return rates
-
-
 @api_view(["GET"])
 def get_rates_view(request):
     """
@@ -424,7 +398,7 @@ def buy(request):
     rates = get_rates()
     metal_type = request.data.get("metal_type")
     amount = request.data.get("amount")
-    is_autopay = request.data.get("is_autopay")
+    is_autopay = False
     lock_price = rates.gold_buy
     if (metal_type == "silver"):
         lock_price = rates.silver_buy
@@ -435,8 +409,7 @@ def buy(request):
         block_id=rates.block_id,
         lock_price=lock_price,
         metal_type=metal_type,
-        amount=amount,
-        is_autopay=is_autopay
+        amount=amount
     )
     payload = {
         "lockPrice": lock_price,

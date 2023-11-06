@@ -39,4 +39,8 @@ app.conf.beat_schedule = {
         'task': 'add_daily_savings',
         'schedule': crontab(hour=5, minute=0),
     },
+    'scheduled-reset-data': {
+        'task': 'scheduled_reset_data',
+        'schedule': crontab(hour=0, minute=0),
+    }
 }
