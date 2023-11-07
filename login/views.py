@@ -317,6 +317,7 @@ class FillUpViews(views.APIView):
         user_savings.fillups += fillup_value
         user_savings.todays_savings += fillup_value
         user_savings.monthly_savings += fillup_value
+        user_savings.monthly_fillups += fillup_value
         user_savings.todays_spendings += base_value
         if(user_savings.current_savings >= 100):
             amount = user_savings.current_savings
