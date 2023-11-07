@@ -73,6 +73,7 @@ class FillUp(models.Model):
     fillup_value = models.BigIntegerField(default=0)
     base_value = models.BigIntegerField(default=0)
     intent = models.CharField(max_length=50, default="Unknown")
+    last_read = models.DateTimeField(blank=True, null=True)
 
     is_daily_savings = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

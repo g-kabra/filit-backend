@@ -37,7 +37,7 @@ def scheduled_reset_data():
     """
         Resets the daily/monthly savings data for all users.
     """
-    for savings in UserTotalSavings.objects.filter():
+    for savings in UserTotalSavings.objects.all():
         if datetime.now().day == 1:
             savings.monthly_savings = 0
             savings.monthly_fillups = 0

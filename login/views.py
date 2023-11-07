@@ -20,7 +20,7 @@ from rest_framework import views, viewsets
 from payments.functions import make_debit_request
 
 
-from .models import FillUp, PhoneModel, EmailModel, CustomUser, UserDailySavings, UserTotalSavings
+from .models import FillUp, PhoneModel, EmailModel, UserDailySavings, UserTotalSavings
 from .serializers import CustomUserSerializer, DailySavingsSerializer, FillUpSerializer, UserTotalSavingsSerializer
 from .functions import make_response
 
@@ -292,6 +292,7 @@ class FillUpViews(views.APIView):
         user = request.user
         fillup_value = request.data.get("fillup_value")
         base_value = request.data.get("base_value")
+        last_read = request.data.get("last_read")
         intent = request.data.get("intent")
 
         user_savings, c = UserTotalSavings.objects.get_or_create(user=user)
@@ -309,6 +310,7 @@ class FillUpViews(views.APIView):
             user=user,
             fillup_value=fillup_value*user_savings.fillup_multiplier,
             base_value=base_value,
+            last_read=datetime.fromtimestamp(last_read),
             intent=intent
         )
 
