@@ -6,9 +6,11 @@ from rest_framework import views, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from django.core.paginator import Paginator
 
 from .models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldRatesModel, GoldTransactionModel, GoldHoldingsModel
 from payments.models import TransactionDetails
+
 
 from .functions import make_request, make_response, get_rates
 from .serializers import BankSerializer, HoldingSerializer, TransactionSerializer
@@ -524,6 +526,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(gold_user_id=self.get_gold_user().gold_user_id)
         return None
 
+@api_view(["GET"])
+def get_paginated_transactions(request):
+    """
+        Get paginated transactions
+    """
+    user = request.user
+    txn = GoldTransactionModel.objects.filter(user_id=user).order_by("-timestamp")
+    paginator = Paginator(txn, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return Response(make_response("Data fetched successfully", data={'items': TransactionSerializer(page_obj.object_list, many=True).data, 'has_next': page_obj.has_next()}))
 
 @api_view(["GET"])
 def get_passbook(request):
