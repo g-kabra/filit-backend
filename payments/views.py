@@ -225,11 +225,9 @@ def authorize_subscription(request):
                                           }
                                       ]))
     subscription = subscription.first()
-    current_time = datetime.now()
-    current_time = current_time.replace(tzinfo=None)
-    subscription.valid_till = subscription.valid_till.replace(
-        tzinfo=None)  # ? Have to add proper support later
-    if subscription.valid_till < current_time:
+    current_time = datetime.now(tz=None)
+    validity = subscription.valid_till.replace(tzinfo=None)
+    if validity < current_time:
         return Response(make_response("Subscription has expired",
                                       status=400,
                                       errors=[
