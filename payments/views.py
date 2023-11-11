@@ -214,7 +214,7 @@ def authorize_subscription(request):
         This view will fetch an authorizing link for the given user.
     """
     user = request.user
-    subscription = AutopayModel.objects.filter(user_id=user, status="CREATED")
+    subscription = AutopayModel.objects.filter(user_id=user, status="CREATED").order_by('-valid_till')
     if not subscription.exists():
         return Response(make_response("Subscription doesn't exist",
                                       status=400,
