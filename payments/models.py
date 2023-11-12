@@ -35,7 +35,7 @@ class TransactionDetails(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     amount = models.BigIntegerField(default=0)
     completion_status = models.CharField(max_length=10, choices=status, default=1)
-  d  intent = models.CharField(max_length=4, choices=INTENTS, default="GOLD")
+    intent = models.CharField(max_length=4, choices=INTENTS, default="GOLD")
     txn_type = models.CharField(max_length=7, choices=TYPES, default="MANUAL")
 
     payment_instrument = models.CharField(max_length=20, null=True)
