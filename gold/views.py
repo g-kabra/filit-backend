@@ -1,7 +1,6 @@
 """
 Contains the views for the Augmont integration for Filit
 """
-from datetime import datetime, timedelta
 from rest_framework import views, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -232,20 +231,18 @@ class BankViews(views.APIView):
                 ]
             ))
         gold_user = gold_user.first()
-        bank_id = request.data.get("user_bank_id")
+        bank_id = request.data.get("userBankId")
         bank = GoldBankModel.objects.get(bank_id=bank_id)
-        bank = BankSerializer(bank, data=request.data, partial=True)
-        if bank.is_valid():
-            response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, body={
-                "accountNumber": bank.validated_data["account_number"],
-                "accountName": bank.validated_data["account_name"],
-                "ifscCode": bank.validated_data["ifsc_code"],
-            }, method="PUT")
-            if response.status_code < 300:
-                bank.save()
-                return Response(response.json())
-            return Response(response.json(), status=400)
-        return Response(bank.errors, status=400)
+        payload = {
+            "accountNumber": request.data.get("accountNumber"),
+            "accountName": request.data.get("accountName"),
+            "ifscCode": request.data.get("ifscCode"),
+        }
+        response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, body=payload, method="PUT")
+        if response.status_code < 300:
+            bank.save()
+            return Response(response.json())
+        return Response(response.json(), status=400)
 
 
 class AddressViews(views.APIView):
@@ -531,8 +528,10 @@ def get_paginated_transactions(request):
     """
         Get paginated transactions
     """
+
     user = request.user
-    txn = GoldTransactionModel.objects.filter(user_id=user).order_by("-timestamp")
+    gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
+    txn = GoldTransactionModel.objects.filter(gold_user_id=gold_user).order_by("-timestamp")
     paginator = Paginator(txn, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
