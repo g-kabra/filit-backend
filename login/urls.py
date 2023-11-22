@@ -12,7 +12,8 @@ urlpatterns = [
     path("daily-savings/", views.DailySavingsViews.as_view()),
     path("fillup/", views.FillUpViews.as_view()),
     path("total-savings/", views.get_total_savings),
-    path("update-fillup/", views.update_fillups)
+    path("update-fillup/", views.update_fillups),
+    path("check-ifsc/", views.check_ifsc)
 ]
 
 router = routers.SimpleRouter()

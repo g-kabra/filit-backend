@@ -9,6 +9,7 @@ import pyotp
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
+import requests
 
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
@@ -373,3 +374,21 @@ def update_fillups(request):
     total_savings.save()
 
     return Response(make_response("Fillups updated successfully", data=UserTotalSavingsSerializer(total_savings).data))
+
+@api_view(["POST"])
+def check_ifsc(request):
+    """
+        Verify IFSC code
+    """
+    ifsc = request.data.get("ifsc")
+    if not ifsc:
+        return Response(make_response("IFSC code not provided", status=400, errors=[
+            {
+                "code": "IFSC_NOT_PROVIDED",
+                "message": "IFSC code not provided"
+            }
+        ]))
+    response = requests.get(f"https://ifsc.razorpay.com/{ifsc}")
+    if response.status_code < 300:
+        return Response(make_response("IFSC code is valid", data=response.json()))
+    return Response(make_response("IFSC code is invalid", status=400, errors=[]))
