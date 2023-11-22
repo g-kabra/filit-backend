@@ -388,7 +388,7 @@ def check_ifsc(request):
                 "message": "IFSC code not provided"
             }
         ]))
-    response = requests.get(f"https://ifsc.razorpay.com/{ifsc}")
+    response = requests.get(f"https://ifsc.razorpay.com/{ifsc}", timeout=5000)
     if response.status_code < 300:
         return Response(make_response("IFSC code is valid", data=response.json()))
     return Response(make_response("IFSC code is invalid", status=400, errors=[]))
