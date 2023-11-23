@@ -23,6 +23,7 @@ def get_token():
     if (not token_model):
         token_model = GoldTokenModel.objects.create()
     expiry = (token_model.expiry)
+    expiry = expiry.replace(tzinfo=pytz.UTC)
     if (expiry < curr_time):
         print("Getting new token")
         response = requests.post(BASE_URL + "/merchant/v1/auth/login",
