@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timedelta
+import pytz
 import os
 
 from login.models import CustomUser
@@ -17,12 +18,11 @@ def get_token():
     DESCRIPTION
         This function generates an access token for Augmont
     """
-    curr_time = datetime.now(tz=None)
+    curr_time = datetime.now(tz=pytz.UTC)
     token_model = GoldTokenModel.objects.first()
     if (not token_model):
         token_model = GoldTokenModel.objects.create()
     expiry = (token_model.expiry)
-    expiry = expiry.replace(tzinfo=None)
     if (expiry < curr_time):
         print("Getting new token")
         response = requests.post(BASE_URL + "/merchant/v1/auth/login",
@@ -37,7 +37,8 @@ def get_token():
         token_model.token = response["result"]["data"]["accessToken"]
         token_model.token_type = response["result"]["data"]["tokenType"]
         token_model.save()
-        print("Will expire by", expiry_time.isoformat())
+        print("Will expire by", expiry_time.isoformat(), "now is",
+              curr_time.isoformat())
     return token_model.token_type + " " + token_model.token
 
 
