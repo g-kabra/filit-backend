@@ -257,11 +257,14 @@ class DailySavingsViews(views.APIView):
                     "message": "Couldn't update daily savings"
                 }
             ]))
-        daily_savings.daily_savings_amount = amount
-        daily_savings.startdate = datetime.utcnow().date()
-        daily_savings.processed = 0
+        daily_savings.is_active = False
         daily_savings.save()
-        return Response(make_response("Daily savings updated successfully"))
+        daily_savings = UserDailySavings.objects.create(
+            user=user,
+            daily_savings_amount=amount,
+            startdate=datetime.utcnow().date()
+        )
+        return Response(make_response("Daily savings updated successfully", data=DailySavingsSerializer(daily_savings).data))
 
     def delete(self, request):
         """ 
