@@ -249,17 +249,19 @@ class DailySavingsViews(views.APIView):
                     }
                 ]
             ))
-        serializer = DailySavingsSerializer(
-            daily_savings, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(make_response("Daily savings updated successfully", data=serializer.data))
-        return Response(make_response("Couldn't update daily savings", data=serializer.errors, status=400, errors=[
-            {
-                "code": "DAILY_SAVINGS_UPDATE_FAILED",
-                "message": "Couldn't update daily savings"
-            }
-        ]))
+        amount = request.data.get("daily_savings_amount")
+        if not amount:
+            return Response(make_response("Couldn't update daily savings", status=400, errors=[
+                {
+                    "code": "DAILY_SAVINGS_UPDATE_FAILED",
+                    "message": "Couldn't update daily savings"
+                }
+            ]))
+        daily_savings.daily_savings_amount = amount
+        daily_savings.startdate = datetime.utcnow().date()
+        daily_savings.processed = 0
+        daily_savings.save()
+        return Response(make_response("Daily savings updated successfully"))
 
     def delete(self, request):
         """ 
