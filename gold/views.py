@@ -240,6 +240,9 @@ class BankViews(views.APIView):
         }
         response = make_request("/merchant/v1/users/"+gold_user.gold_user_id+"/banks/"+bank_id, body=payload, method="PUT")
         if response.status_code < 300:
+            bank.account_number = payload["accountNumber"]
+            bank.account_name = payload["accountNumber"]
+            bank.ifsc_code = payload["accountNumber"]
             bank.save()
             return Response(response.json())
         return Response(response.json(), status=400)
