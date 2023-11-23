@@ -426,8 +426,8 @@ def buy(request):
         holding, c = GoldHoldingsModel.objects.get_or_create(
             gold_user_id=gold_user)
         txn.txn_id = response.json()["result"]["data"]["transactionId"]
-        txn.quantity = response.json()["result"]["data"]["quantity"]
-        holding.gold_locked += response.json()["result"]["data"]["quantity"]
+        txn.quantity = float(response.json()["result"]["data"]["quantity"])
+        holding.gold_locked += float(response.json()["result"]["data"]["quantity"])
         txn.status = "LOCKED"
         txn.save()
     return Response(response.json())
