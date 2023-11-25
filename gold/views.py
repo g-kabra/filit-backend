@@ -7,12 +7,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 
-from .models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldRatesModel, GoldTransactionModel, GoldHoldingsModel
 from payments.models import TransactionDetails
+from login.models import UserTotalSavings
+from .models import GoldAddressModel, GoldBankModel, GoldInvestorModel, GoldTransactionModel, GoldHoldingsModel
 
 
 from .functions import make_request, make_response, get_rates
-from .serializers import BankSerializer, HoldingSerializer, TransactionSerializer
+from .serializers import HoldingSerializer, TransactionSerializer
 
 
 class UserViews(views.APIView):
@@ -156,7 +157,7 @@ class BankViews(views.APIView):
         response = make_request(
             "/merchant/v1/users/" + gold_user.gold_user_id+"/banks", body=payload)
         if response.status_code >= 300:
-            return Response(response)
+            return Response(response.json())
         response = response.json()
         GoldBankModel.objects.create(
             gold_user_id=gold_user,
@@ -371,6 +372,7 @@ def buy(request):
         ))
     gold_user = gold_user.first()
 
+    # Verifying Transaction
     txn_id = request.data.get("txn_id")
     txn = TransactionDetails.objects.filter(txn_id=txn_id)
     if not txn:
@@ -407,6 +409,8 @@ def buy(request):
                 }
             ]
         )) 
+    
+    # Preparing Payload
     rates = get_rates()
     metal_type = request.data.get("metal_type")
     amount = request.data.get("amount")
@@ -430,18 +434,31 @@ def buy(request):
         "uniqueId": gold_user.gold_user_id,
         "blockId": rates.block_id
     }
+
+    # Making request to Augmont
     response = make_request("/merchant/v1/buy", body=payload)
     if (response.status_code == 200):
+        # Successful response, updating transaction and holdings
         holding, c = GoldHoldingsModel.objects.get_or_create(
             gold_user_id=gold_user)
+        holding.gold_locked += float(response.json()["result"]["data"]["quantity"])
+
         gold_txn.txn_id = response.json()["result"]["data"]["transactionId"]
         gold_txn.quantity = float(response.json()["result"]["data"]["quantity"])
-        holding.gold_locked += float(response.json()["result"]["data"]["quantity"])
         gold_txn.status = "LOCKED"
+        
         txn.used = True
+        
+        savings = UserTotalSavings.objects.get(user_id=user)
+        amount = float(response.json()["result"]["data"]["quantity"]) * lock_price
+        savings.savings += amount
+        savings.todays_savings += amount
+        savings.monthly_savings += amount
+
         gold_txn.save()
         holding.save()
         txn.save()
+        savings.save()
     return Response(response.json())
 
 
@@ -484,7 +501,7 @@ def sell(request):
             ]
         ))
     
-    holding = GoldHoldingsModel.objects.get(gold_user_id=gold_user)
+    holding = GoldHoldingsModel.objects.get_or_create(gold_user_id=gold_user)
     if (holding.gold_held * lock_price < amount):
         return Response(make_response(
             "Insufficient amount",
@@ -562,7 +579,7 @@ def get_paginated_transactions(request):
 
     user = request.user
     gold_user = GoldInvestorModel.objects.get(user_id=user.user_id)
-    txn = GoldTransactionModel.objects.filter(gold_user_id=gold_user).order_by("-timestamp")
+    txn = GoldTransactionModel.objects.filter(gold_user_id=gold_user).order_by("-timestamp").prefetch_related("payment_id")
     paginator = Paginator(txn, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
