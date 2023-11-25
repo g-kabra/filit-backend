@@ -31,14 +31,12 @@ def create_transaction(request):
         "amount": amount,
         "merchantUserId": user.user_id,
         "callbackUrl": "https://api.filit.in/payments/verify/",
-        "redirectUrl": "https://filit.in/",
-        "redirectMode": "REDIRECT",
         "paymentInstrument": {
             "type": "PAY_PAGE"
         }
     }
-    response = make_pay_request("/pg/v1/pay", payload)
-    return Response(response.json())
+    # response = make_pay_request("/pg/v1/pay", payload)
+    return Response(make_response("Transaction Initiated", data=payload))
 
 
 @api_view(["POST"])
@@ -61,7 +59,6 @@ def verify_transaction(request):
     txn = TransactionDetails.objects.filter(
         txn_id=data["merchantTransactionId"])
     if data["code"] == "PAYMENT_SUCCESS":
-        print(data)
         if (not txn.exists() or txn.amount != data["amount"]):
             return Response("Invalid Transaction")
         txn = txn.first()
