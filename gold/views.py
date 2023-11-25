@@ -396,14 +396,24 @@ def buy(request):
                 }
             ]
         ))
-
+    if txn.used:
+        return Response(make_response(
+            "Transaction has been used",
+            status=400,
+            errors=[
+                {
+                    "code": "TRANSACTION_USED",
+                    "message": "Transaction has been used"
+                }
+            ]
+        )) 
     rates = get_rates()
     metal_type = request.data.get("metal_type")
     amount = request.data.get("amount")
     lock_price = rates.gold_buy
     if (metal_type == "silver"):
         lock_price = rates.silver_buy
-    txn = GoldTransactionModel.objects.create(
+    gold_txn = GoldTransactionModel.objects.create(
         gold_user_id=gold_user,
         payment_id=txn,
         txn_type="buy",
@@ -416,7 +426,7 @@ def buy(request):
         "lockPrice": lock_price,
         "metalType": metal_type,
         "amount": amount,
-        "merchantTransactionId": txn.gold_txn_id,
+        "merchantTransactionId": gold_txn.gold_txn_id,
         "uniqueId": gold_user.gold_user_id,
         "blockId": rates.block_id
     }
@@ -424,11 +434,13 @@ def buy(request):
     if (response.status_code == 200):
         holding, c = GoldHoldingsModel.objects.get_or_create(
             gold_user_id=gold_user)
-        txn.txn_id = response.json()["result"]["data"]["transactionId"]
-        txn.quantity = float(response.json()["result"]["data"]["quantity"])
+        gold_txn.txn_id = response.json()["result"]["data"]["transactionId"]
+        gold_txn.quantity = float(response.json()["result"]["data"]["quantity"])
         holding.gold_locked += float(response.json()["result"]["data"]["quantity"])
+        gold_txn.status = "LOCKED"
+        txn.used = True
+        gold_txn.save()
         holding.save()
-        txn.status = "LOCKED"
         txn.save()
     return Response(response.json())
 
@@ -471,6 +483,20 @@ def sell(request):
                 }
             ]
         ))
+    
+    holding = GoldHoldingsModel.objects.get(gold_user_id=gold_user)
+    if (holding.gold_held * lock_price < amount):
+        return Response(make_response(
+            "Insufficient amount",
+            status=400,
+            errors=[
+                {
+                    "code": "INSUFFICIENT_AMOUNT",
+                    "message": "Insufficient amount"
+                }
+            ]
+        ))
+
     txn = GoldTransactionModel.objects.create(
         gold_user_id=gold_user,
         txn_type="sell",
@@ -495,6 +521,8 @@ def sell(request):
     if (response.status_code == 200):
         txn.txn_id = response.json()["result"]["data"]["transactionId"]
         txn.status = True
+        holding.gold_held -= float(response.json()["result"]["data"]["quantity"])
+        holding.save()
         txn.save()
     return Response(response.json())
 

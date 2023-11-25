@@ -37,6 +37,7 @@ class TransactionDetails(models.Model):
     completion_status = models.CharField(max_length=10, choices=status, default=1)
     intent = models.CharField(max_length=4, choices=INTENTS, default="GOLD")
     txn_type = models.CharField(max_length=7, choices=TYPES, default="MANUAL")
+    used = models.BooleanField(default=False)
 
     payment_instrument = models.CharField(max_length=20, null=True)
     payment_id = models.CharField(max_length=50, null=True)

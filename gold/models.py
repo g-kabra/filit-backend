@@ -30,7 +30,7 @@ class GoldTokenModel(models.Model):
     """
     Stores the token for the API
     """
-    expiry = models.DateTimeField(default=base_time)
+    initiate = models.DateTimeField(default=base_time)
     token = models.CharField(max_length=1500, null=True)
     token_type = models.CharField(max_length=20, null=True)
 

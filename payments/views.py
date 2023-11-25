@@ -35,8 +35,9 @@ def create_transaction(request):
             "type": "PAY_PAGE"
         }
     }
-    # response = make_pay_request("/pg/v1/pay", payload)
-    return Response(make_response("Transaction Initiated", data=payload))
+    response = make_pay_request("/pg/v1/pay", payload)
+    # return Response(make_response("Transaction Initiated", data=payload))
+    return Response(make_response("Transaction Initiated", data=response.json()))
 
 
 @api_view(["POST"])

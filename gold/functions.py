@@ -22,9 +22,9 @@ def get_token():
     token_model = GoldTokenModel.objects.first()
     if (not token_model):
         token_model = GoldTokenModel.objects.create()
-    expiry = (token_model.expiry)
-    expiry = expiry.replace(tzinfo=pytz.UTC)
-    if (expiry < curr_time):
+    initiate = (token_model.initiate)
+    initiate = initiate.replace(tzinfo=pytz.UTC)
+    if (initiate + timedelta(days=1) < curr_time):
         print("Getting new token")
         response = requests.post(BASE_URL + "/merchant/v1/auth/login",
                                  data={
@@ -32,13 +32,11 @@ def get_token():
                                      "password": os.getenv("AUGMONT_PASS")
                                  }, timeout=5000)
         response = response.json()
-        expiry_time = datetime.strptime(
-            response["result"]["data"]["expiresAt"], "%Y-%m-%d %H:%M:%S")
-        token_model.expiry = expiry_time
+        token_model.initiate = curr_time
         token_model.token = response["result"]["data"]["accessToken"]
         token_model.token_type = response["result"]["data"]["tokenType"]
         token_model.save()
-        print("Will expire by", expiry_time.isoformat(), "now is",
+        print("Will expire by", (initiate + timedelta(days=1)).isoformat(), "now is",
               curr_time.isoformat())
     return token_model.token_type + " " + token_model.token
 
@@ -94,6 +92,8 @@ def get_rates():
     expiry = expiry.replace(tzinfo=None)
     if expiry <= curr_time:
         response = make_request("/merchant/v1/rates", method="GET")
+        if (response.status_code != 200):
+            print("Error in getting rates", response.json())
         response = response.json()
         rates.expiry = datetime.utcnow() + timedelta(minutes=2)
         rates.block_id = response["result"]["data"]["blockId"]
