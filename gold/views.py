@@ -400,7 +400,6 @@ def buy(request):
     rates = get_rates()
     metal_type = request.data.get("metal_type")
     amount = request.data.get("amount")
-    is_autopay = False
     lock_price = rates.gold_buy
     if (metal_type == "silver"):
         lock_price = rates.silver_buy
@@ -428,6 +427,7 @@ def buy(request):
         txn.txn_id = response.json()["result"]["data"]["transactionId"]
         txn.quantity = float(response.json()["result"]["data"]["quantity"])
         holding.gold_locked += float(response.json()["result"]["data"]["quantity"])
+        holding.save()
         txn.status = "LOCKED"
         txn.save()
     return Response(response.json())
@@ -585,4 +585,4 @@ def get_invoice(request):
     gold_user = gold_user.first()
     txn_id = request.data.get("txn_id")
     response = make_request("/merchant/v1/invoice/" + txn_id, method="GET")
-    return Response(response.json())
+    return Response(make_response("Invoice fetched successfully", data=response.json()))
