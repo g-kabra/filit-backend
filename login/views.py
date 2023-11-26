@@ -316,7 +316,7 @@ class FillUpViews(views.APIView):
             user=user,
             fillup_value=fillup_value*user_savings.fillup_multiplier,
             base_value=base_value,
-            last_read=datetime.fromtimestamp(last_read),
+            last_read=last_read,
             intent=intent
         )
 
