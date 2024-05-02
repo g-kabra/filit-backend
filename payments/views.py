@@ -35,8 +35,13 @@ def create_transaction(request):
             "type": "PAY_PAGE"
         }
     }
-    response = make_pay_request("/pg/v1/pay", payload)
-    return Response(make_response("Transaction Initiated", data=response))
+    errors = []
+    try:
+        response = make_pay_request("/pg/v1/pay", payload)
+    except Exception as e:
+        errors = [str(e)]
+
+    return Response(make_response("Transaction Initiated", data=response, errors=errors))
 
 
 @api_view(["POST"])
