@@ -41,7 +41,7 @@ def create_transaction(request):
     except Exception as e:
         errors = [str(e)]
 
-    return Response(make_response("Transaction Initiated", data=response, errors=errors))
+    return Response(make_response("Transaction Initiated", data=response.json(), errors=errors))
 
 
 @api_view(["POST"])
