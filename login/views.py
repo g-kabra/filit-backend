@@ -323,6 +323,7 @@ class FillUpViews(views.APIView):
         # ? Update user savings
         user_savings.savings += fillup_value
         user_savings.fillups += fillup_value
+        user_savings.current_savings += fillup_value
         user_savings.todays_savings += fillup_value
         user_savings.monthly_savings += fillup_value
         user_savings.monthly_fillups += fillup_value
