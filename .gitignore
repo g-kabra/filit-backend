@@ -4,6 +4,7 @@ fp_req.txt
 
 #Virtual environments and environment variables
 .env
+/env
 /venv
 
 #pycache
